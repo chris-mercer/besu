@@ -6,7 +6,23 @@
 *.launch
 *.log
 .classpath
-.claude
+# Claude Code internal files (keep CLAUDE.md)
+.claude/SESSION_NOTES.md
+.claude/reports/
+.claude/debug.log
+
+# Secrets & credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+
+# Planning & internal docs
+SESSION_NOTES.md
+PLANNING.md
+SCRATCH.md
 .DS_Store
 .externalToolBuilders/
 .gradle/
