@@ -114,8 +114,7 @@ public enum NetworkDefinition {
       1, // network id
       true, // can snap sync
       false, // native required
-      60_000_000L, // target gas limit
-      "November 2025"),
+      60_000_000L), // target gas limit
   /** Mordor network name. */
   MORDOR(
       "/mordor.json",
@@ -123,8 +122,7 @@ public enum NetworkDefinition {
       7, // network id
       true, // can snap sync
       false, // native required
-      60_000_000L, // target gas limit
-      "November 2025");
+      60_000_000L); // target gas limit
 
   private final String genesisFile;
   private final long chainId;
