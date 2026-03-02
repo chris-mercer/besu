@@ -4,19 +4,18 @@
 
 ### Breaking Changes
 
+
 ### Upcoming Breaking Changes
 - RPC changes to enhance compatibility with other ELs
   - Block number parameter in RPCs will only support hex values. Support for non-hex (decimal) block number parameters is deprecated.
   - This affects several RPCs, including `admin_logsRemoveCache`, `debug_getRawHeader`, `eth_call`, `eth_simulateV1`, `trace_call` and more.
 - Holesky network is deprecated [#9437](https://github.com/hyperledger/besu/pull/9437)
-- Sunsetting features - for more context on the reasoning behind the deprecation of these features, including alternative options, read [this blog post](https://www.lfdecentralizedtrust.org/blog/sunsetting-tessera-and-simplifying-hyperledger-besu)
-  - Proof of Work consensus (PoW)
-  - Clique Block Production (mining) - you will still be able to sync existing Clique networks, but not be a validator or create new Clique networks.
 
 ### Bug fixes
 - BFT forks that change block period on time-based forks don't take effect [9681](https://github.com/hyperledger/besu/issues/9681)
 
 ### Additions and Improvements
+- Restore ETC Classic and Mordor network support (Olympia branch)
 - Add IPv6 dual-stack support for DiscV5 peer discovery (enabled via `--Xv5-discovery-enabled`): new `--p2p-host-ipv6`, `--p2p-interface-ipv6`, and `--p2p-port-ipv6` CLI options enable a second UDP discovery socket; `--p2p-ipv6-outbound-enabled` controls whether IPv6 is preferred for outbound connections when a peer advertises both address families [#9763](https://github.com/hyperledger/besu/pull/9763); RLPx now also binds a second TCP socket on the IPv6 interface so IPv6-only peers can establish connections [#9873](https://github.com/hyperledger/besu/pull/9873)
 - Stop EngineQosTimer as part of shutdown [#9903](https://github.com/hyperledger/besu/pull/9903)
 - Add blockTimestamp to transaction RPC results [#9887](https://github.com/hyperledger/besu/pull/9887)
@@ -24,7 +23,6 @@
 ## 26.2.0
 
 ### Breaking Changes
-- ETC Classic support in Besu is removed. This includes all ETC related hardforks including Mordor and Spiral. [#9671](https://github.com/hyperledger/besu/pull/9671)
 - Forest db subcommands `x-backup-state` and `x-restore-state` are removed [#9821](https://github.com/hyperledger/besu/pull/9821)
 - Omit totalDifficulty from post-merge blockResults [#9836](https://github.com/hyperledger/besu/pull/9836)
 - **Chain pruning CLI options have been redesigned with new behavior:** [#9637](https://github.com/hyperledger/besu/pull/9637)
@@ -54,6 +52,7 @@
 - RPC changes to enhance compatibility with other ELs
   - Block number parameter in RPCs will only support hex values. Support for non-hex (decimal) block number parameters is deprecated.
   - This affects several RPCs, including `admin_logsRemoveCache`, `debug_getRawHeader`, `eth_call`, `eth_simulateV1`, `trace_call` and more.
+- ETC Classic and Mordor network support in Besu is deprecated [#9437](https://github.com/hyperledger/besu/pull/9437)
 - Holesky network is deprecated [#9437](https://github.com/hyperledger/besu/pull/9437)
 - Sunsetting features - for more context on the reasoning behind the deprecation of these features, including alternative options, read [this blog post](https://www.lfdecentralizedtrust.org/blog/sunsetting-tessera-and-simplifying-hyperledger-besu)
     - Proof of Work consensus (PoW)
@@ -109,7 +108,7 @@
   - Optimise EIP-196 AltBn128: EcAdd 33-128% faster, EcMul 8% faster [#9570](https://github.com/hyperledger/besu/pull/9570)
   - Improved `getBlobsV2` by disabling HTTP response compression for engine API, with up to 10× throughput improvement observed for large numbers of blobs. [#9667](https://github.com/hyperledger/besu/pull/9667)
   - Replace BytesTrieSet with HashSet, improves CREATE, CREATE2, SELFDESTRUCT and jumpdest analysis by up to 48% [#9641](https://github.com/hyperledger/besu/pull/9641)
-  - Parallelize state root computation for Bonsai [#9576](https://github.com/hyperledger/besu/pull/9576)
+  - Parallelize state root computation for Bonsai (#9576)[https://github.com/hyperledger/besu/pull/9576]
 - Update to Netty 4.2.9.Final [#9587](https://github.com/hyperledger/besu/pull/9587)
 - Update to log4j 2.25.3 [#9600](https://github.com/hyperledger/besu/pull/9600)
 - Add `engine_getBlobsV3` method [#9582](https://github.com/hyperledger/besu/pull/9582)
