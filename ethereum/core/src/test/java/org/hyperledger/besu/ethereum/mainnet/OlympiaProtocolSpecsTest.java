@@ -23,6 +23,8 @@ import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.ethereum.chain.BadBlockManager;
 import org.hyperledger.besu.ethereum.core.BlockHeaderTestFixture;
 import org.hyperledger.besu.ethereum.core.MiningConfiguration;
+import org.hyperledger.besu.ethereum.mainnet.blockhash.FrontierPreExecutionProcessor;
+import org.hyperledger.besu.ethereum.mainnet.blockhash.OlympiaPreExecutionProcessor;
 import org.hyperledger.besu.evm.gascalculator.PragueGasCalculator;
 import org.hyperledger.besu.evm.gascalculator.ShanghaiGasCalculator;
 import org.hyperledger.besu.evm.internal.EvmConfiguration;
@@ -190,5 +192,31 @@ public class OlympiaProtocolSpecsTest {
   @Test
   public void olympiaHardforkIdName() {
     assertThat(specAt(OLYMPIA_BLOCK).getHardforkId().name()).isEqualTo("OLYMPIA");
+  }
+
+  // --- Deferred EIP wiring ---
+
+  @Test
+  public void olympiaUsesOlympiaPreExecutionProcessor() {
+    assertThat(specAt(OLYMPIA_BLOCK).getPreExecutionProcessor())
+        .isInstanceOf(OlympiaPreExecutionProcessor.class);
+  }
+
+  @Test
+  public void spiralUsesFrontierPreExecutionProcessor() {
+    assertThat(specAt(SPIRAL_BLOCK).getPreExecutionProcessor())
+        .isInstanceOf(FrontierPreExecutionProcessor.class);
+  }
+
+  @Test
+  public void olympiaUsesOlympiaGasLimitCalculator() {
+    assertThat(specAt(OLYMPIA_BLOCK).getGasLimitCalculator())
+        .isInstanceOf(OlympiaTargetingGasLimitCalculator.class);
+  }
+
+  @Test
+  public void spiralDoesNotUseOlympiaGasLimitCalculator() {
+    assertThat(specAt(SPIRAL_BLOCK).getGasLimitCalculator())
+        .isNotInstanceOf(OlympiaTargetingGasLimitCalculator.class);
   }
 }
