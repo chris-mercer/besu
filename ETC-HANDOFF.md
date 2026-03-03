@@ -2,12 +2,12 @@
 
 ## Overview
 
-The `etc` branch restores Hyperledger Besu as a fully functional Ethereum Classic client, bringing it to parity with current ETC network specs through the Spiral hard fork (pre-Olympia). This branch is ready to serve as the base for the `olympia` branch (Phases 5-6).
+The `etc` branch restores Hyperledger Besu as a fully functional Ethereum Classic client through the Spiral hard fork. The `olympia` branch (from `etc`) adds the Olympia hard fork — ETC's biggest upgrade, bringing EIP-1559 with treasury credit + 13 Cancun/Prague EIPs.
 
-**Branch:** `etc` (from `main`)
-**Commits:** 6 ahead of `main`
-**Status:** Phases 1-5 COMPLETE — ETC support restored, PoW mining re-enabled, MESS implemented, comprehensive test suite (unit + live)
-**Scope:** 64 files changed, ~34,000 lines
+**Branch:** `etc` (from `main`) — ETC client through Spiral
+**Branch:** `olympia` (from `etc`) — Olympia hard fork (ECIP-1111 + ECIP-1121)
+**Status:** Phases 1-5 (etc) + Olympia Commits 1-3 COMPLETE
+**Olympia activation:** Mordor block 15,800,850 / ETC mainnet block 24,751,337
 
 ### Background
 
@@ -340,13 +340,16 @@ build/install/besu/bin/besu --network=MORDOR \
 | 4 | `ArtificialFinalityTest.java` | 15 | Unit |
 | 4 | `ClassicBlockProcessorTest.java` | ~17 | Unit |
 | 4 | `ClassicDifficultyCalculatorsTest.java` | 16 | Unit |
-| 4 | `ClassicProtocolSpecsTest.java` | 17 | Unit |
-| 4 | `GenesisConfigClassicTest.java` | 25 | Unit |
+| 4 | `ClassicProtocolSpecsTest.java` | 26 | Unit |
+| 4 | `GenesisConfigClassicTest.java` | 27 | Unit |
 | 5 | `EtcHashDeepTest.java` | 12 | Unit |
 | 5 | `ClassicProtocolScheduleDeepTest.java` | 10 | Unit |
 | 5 | `MordorLiveTest.java` | 14 | Live |
 | 5 | `EtcMainnetLiveTest.java` | 12 | Live |
-| | **Total** | **~138** | |
+| Olympia | `OlympiaBlockProcessorTest.java` | 12 | Unit |
+| Olympia | `OlympiaProtocolSpecsTest.java` | 13 | Unit |
+| Olympia | `GenesisConfigOlympiaTest.java` | 10 | Unit |
+| | **Total** | **~184** | |
 
 ---
 
@@ -391,20 +394,108 @@ The Mordor treasury address `0xCfE1e0ECbff745e6c800fF980178a8dDEf94bEe2` is a de
 
 ---
 
-## Next Steps: Olympia Branch
+## Olympia Branch
 
-The `olympia` branch extends `etc` with 14 EIPs + ECIP-1111 treasury for the Olympia hard fork.
+**Branch:** `olympia` (from `etc`)
+**Commits:** 3 ahead of `etc`
 
-### Activation Timeline
+### Olympia Commit History
 
-| Network | Block | Estimated Date |
-|---------|-------|---------------|
-| Mordor testnet | 15,800,850 | ~March 28, 2026 |
-| ETC mainnet | ~24,751,337 | ~mid-June 2026 |
+| # | Hash | Description |
+|---|------|-------------|
+| 1 | `ff12bb2403` | Config layer + OlympiaBlockProcessor + ClassicEVMs.olympia() |
+| 2 | `fb87092580` | Protocol spec, precompiles, factory, milestone wiring |
+| 3 | `93fefb21d0` | Comprehensive Olympia test suite (35 new tests) |
+
+### Olympia EIP Summary
+
+**ECIP-1111 (EIP-1559 + treasury):**
+- EIP-1559: Dynamic basefee, Type-2 transactions — basefee credited to treasury (not burned)
+- EIP-3198: BASEFEE opcode
+
+**ECIP-1121 (13 EIPs):**
+- EIP-5656: MCOPY | EIP-1153: TLOAD/TSTORE | EIP-6780: SELFDESTRUCT nerf
+- EIP-2537: BLS12-381 precompiles | EIP-7951: P-256 precompile
+- EIP-7823/7883: MODEXP bounds + gas | EIP-7825: TX gas cap 30M
+- EIP-7623: Floor calldata gas | EIP-7935: Default gas limit 60M
+- EIP-2935: Block hashes in state | EIP-7702: EOA code delegation
+- EIP-7934: Block size limit
+
+**Treasury:** `0xCfE1e0ECbff745e6c800fF980178a8dDEf94bEe2`
+
+### Olympia Architecture
+
+**Treasury credit is ADDITIVE:** `OlympiaBlockProcessor` extends `ClassicBlockProcessor` and overrides `rewardCoinbase()`. After computing standard ECIP-1017 era rewards, it credits `baseFee × gasUsed` to the treasury address. EIP-1559 transaction processing is not modified — Besu's standard EIP-1559 flow implicitly burns basefee (sender pays, miner gets tips only), and the treasury credit is added separately in block finalization.
+
+**Gas calculator:** `PragueGasCalculator` — handles all gas cost changes (BLS12-381, P-256, MODEXP, calldata floor). Blob-specific methods exist but are never invoked without blob transactions.
+
+**EVM:** `ClassicEVMs.olympia()` — Istanbul ops + PUSH0 + BASEFEE + TLOAD/TSTORE + MCOPY + SelfDestruct(eip6780=true). No BLOBHASH, BLOBBASEFEE, PREVRANDAO.
+
+**Precompiles:** Istanbul + BLS12-381 (7 contracts) + MODEXP(1024 bound) + P256VERIFY. No KZG point evaluation (no blobs on ETC).
+
+**Header validator:** Custom base fee market validator using `Ecip1099EpochCalculator` (60K epochs) for PoW validation. The mainnet `createBaseFeeMarketValidator()` hardcodes `DefaultEpochCalculator` (30K), so Olympia uses `createClassicBaseFeeMarketValidator()` and `createClassicBaseFeeMarketOmmerValidator()` in `ClassicProtocolSpecs.java`.
+
+**Transaction types:** FRONTIER + ACCESS_LIST + EIP1559 + DELEGATE_CODE (no BLOB)
+
+### Olympia Files
+
+| Action | File | Purpose |
+|--------|------|---------|
+| NEW | `OlympiaBlockProcessor.java` | Treasury credit: baseFee × gasUsed → treasury |
+| NEW | `OlympiaBlockProcessorTest.java` | 12 treasury credit tests |
+| NEW | `OlympiaProtocolSpecsTest.java` | 13 fork definition tests |
+| NEW | `GenesisConfigOlympiaTest.java` | 10 genesis config tests |
+| MOD | `HardforkId.java` | Added OLYMPIA to ClassicHardforkId enum |
+| MOD | `GenesisConfigOptions.java` | getOlympiaBlockNumber, getOlympiaTreasuryAddress |
+| MOD | `JsonGenesisConfigOptions.java` | Implementations + asMap + forkBlockNumbers |
+| MOD | `StubGenesisConfigOptions.java` | Fields, getters, builders |
+| MOD | `mordor.json` | olympiaBlock: 15800850, treasury address |
+| MOD | `classic.json` | olympiaBlock: 24751337, treasury address |
+| MOD | `all_forks.json` | olympiaBlock + treasury for round-trip test |
+| MOD | `ClassicEVMs.java` | olympia() + olympiaOperations() |
+| MOD | `ClassicProtocolSpecs.java` | olympiaDefinition() + custom header validators |
+| MOD | `MainnetPrecompiledContracts.java` | populateForOlympia() |
+| MOD | `MainnetPrecompiledContractRegistries.java` | olympia() factory |
+| MOD | `MainnetProtocolSpecFactory.java` | olympiaDefinition() factory |
+| MOD | `MilestoneDefinitions.java` | OLYMPIA milestone entry |
+| MOD | `ClassicProtocolSpecsTest.java` | +5 Olympia tests |
+| MOD | `GenesisConfigClassicTest.java` | +3 Olympia tests |
+
+### Olympia Test Coverage
+
+| File | Tests | Coverage |
+|------|-------|---------|
+| `OlympiaBlockProcessorTest.java` | 12 | Treasury credit calculations, era reward coexistence, accumulation, edge cases |
+| `OlympiaProtocolSpecsTest.java` | 13 | Fork ID, PragueGasCalculator, EIP-1559, block processor type, no withdrawals |
+| `GenesisConfigOlympiaTest.java` | 10 | Mordor/classic parsing, treasury address, asMap, forkBlockNumbers, stub config |
+| `ClassicProtocolSpecsTest.java` | +5 | Olympia fork ID, gas calc, processor, EIP-1559, no withdrawals |
+| `GenesisConfigClassicTest.java` | +3 | Olympia block numbers, asMap keys, stub config |
+| **Total** | **43** | |
+
+### Running Olympia Tests
+
+```bash
+# All Olympia tests
+./gradlew :ethereum:core:test --tests "*Olympia*"
+./gradlew :config:test --tests "*GenesisConfigOlympia*"
+
+# All Classic + Olympia tests (regression)
+./gradlew :ethereum:core:test --tests "*Classic*" --tests "*Olympia*" --tests "*ArtificialFinality*" --tests "*EtcHash*"
+./gradlew :config:test --tests "*GenesisConfig*"
+
+# Full module regression
+./gradlew :ethereum:core:test   # ~9-11 min
+./gradlew :config:test           # ~11 sec
+```
+
+### Deferred Items
+
+- **EIP-2935 (block hashes in state):** Requires system contract deployment at fork activation block. Needs investigation on whether Besu auto-deploys at fork time or if it must be in genesis alloc.
+- **EIP-7825/7623/7935/7934 (gas limits, block size):** PragueGasCalculator handles EIP-7623 calldata floor. Remaining EIPs need separate handling in gas limit calculator, transaction validation, or P2P layer.
 
 ### Reference Implementations
 
-- core-geth: `chris-mercer/core-geth` branch `olympia`
-- Fukuii: `chris-mercer/fukuii` branch `olympia`
-- ECIPs: ECIP-1111 (treasury), ECIP-1112 (treasury contract), ECIP-1121 (EVM modernization)
-- Treasury contract: deployed on Mordor at `0xCfE1e0ECbff745e6c800fF980178a8dDEf94bEe2`
+- core-geth: `/media/dev/2tb/dev/core-geth/` (branch `olympia`, 25 commits)
+- Fukuii: `/media/dev/2tb/dev/fukuii/fukuii-client/` (branch `olympia`)
+- ECIPs: `/media/dev/2tb/dev/ECIPs/_specs/`
+- Treasury contract: `/media/dev/2tb/dev/olympia-treasury-contract/` (deployed on Mordor)
