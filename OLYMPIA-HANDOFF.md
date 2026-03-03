@@ -2,16 +2,13 @@
 
 ## Overview
 
-The `olympia` branch (from `etc`) implements the Olympia hard fork for Besu — ETC's biggest upgrade, bringing EIP-1559 with treasury credit + 13 Cancun/Prague EIPs + 4 deferred EIPs (block hashes in state, TX gas cap, block size limit, default gas limit).
+The `olympia` branch implements the Olympia hard fork for Besu — ETC's biggest protocol upgrade, bringing EIP-1559 with treasury credit, 13 Cancun/Prague EIPs, and 4 deferred EIPs (block hashes in state, TX gas cap, block size limit, default gas limit).
 
-**Branch:** `olympia` (from `etc`) — Olympia hard fork (ECIP-1111 + ECIP-1121)
-**Parent:** `etc` (from `main`) — ETC client through Spiral (6 commits, separate handoff)
-**Status:** ALL 6 OLYMPIA COMMITS COMPLETE
+**Branch:** `olympia` (from `etc`)
+**Parent:** `etc` (from `main`) — ETC client through Spiral. See `ETC-HANDOFF.md` on the `etc` branch.
+**Commits:** 6 ahead of `etc`
+**Status:** ALL COMPLETE — 14 EIPs + treasury + deferred EIPs implemented and tested
 **Olympia activation:** Mordor block 15,800,850 / ETC mainnet block 24,751,337
-
-### Background
-
-Besu was a functional ETC client until February 2026 when Hyperledger upstream removed all ETC support (commit `1167c5a544`, PR #9671 — 31 files, 28,681 lines deleted). This branch recovers that deleted code, fixes API breaks against current Besu `main`, adds ETChash mining support, implements ECIP-1100 (MESS) anti-reorg protection, and adds ~90 new tests covering all restored functionality.
 
 ---
 
@@ -411,9 +408,11 @@ This will be removed from the ECIP-1121 draft before finalization. It is NOT a m
 | 3 | `93fefb21d0` | Comprehensive Olympia test suite (35 new tests) |
 | 4 | `34b19f8cc2` | Handoff documentation |
 | 5 | `4eb88a2058` | Deferred EIPs: EIP-2935, EIP-7825, EIP-7934 |
-| 6 | `ab21427cd5` | Deferred EIP tests + OLYMPIA-HANDOFF.md |
+| 6 | `f5eaa21930` | Deferred EIP tests + OLYMPIA-HANDOFF.md |
 
-### Olympia EIP Summary
+---
+
+## Olympia EIP Summary
 
 **ECIP-1111 (EIP-1559 + treasury):**
 - EIP-1559: Dynamic basefee, Type-2 transactions — basefee credited to treasury (not burned)
@@ -429,7 +428,9 @@ This will be removed from the ECIP-1121 draft before finalization. It is NOT a m
 
 **Treasury:** `0xCfE1e0ECbff745e6c800fF980178a8dDEf94bEe2`
 
-### Olympia Architecture
+---
+
+## Architecture
 
 **Treasury credit is ADDITIVE:** `OlympiaBlockProcessor` extends `ClassicBlockProcessor` and overrides `rewardCoinbase()`. After computing standard ECIP-1017 era rewards, it credits `baseFee × gasUsed` to the treasury address. EIP-1559 transaction processing is not modified — Besu's standard EIP-1559 flow implicitly burns basefee (sender pays, miner gets tips only), and the treasury credit is added separately in block finalization.
 
@@ -443,7 +444,39 @@ This will be removed from the ECIP-1121 draft before finalization. It is NOT a m
 
 **Transaction types:** FRONTIER + ACCESS_LIST + EIP1559 + DELEGATE_CODE (no BLOB)
 
-### Olympia Files
+---
+
+## Deferred EIPs (Commits 5-6) — ALL COMPLETE
+
+### EIP-2935: Block Hashes in State
+
+System contract at `0x0000f90827f1c53a10cb7a02335b175320002935` stores parent block hashes in 8191-slot rotating storage. `OlympiaPreExecutionProcessor` extends `FrontierPreExecutionProcessor` (NOT Cancun/Prague — avoids beacon roots, ETC is PoW). Deploys contract at fork activation if missing (handles both fresh sync via genesis alloc and live network fork). `BLOCKHASH` opcode reads from contract storage via `Eip7709BlockHashLookup`.
+
+**New file:** `blockhash/OlympiaPreExecutionProcessor.java`
+
+### EIP-7825: Transaction Gas Cap (30M)
+
+`OlympiaTargetingGasLimitCalculator` extends `LondonTargetingGasLimitCalculator` with `transactionGasLimitCap() = 30_000_000L`. Besu's `MainnetTransactionValidator` already checks this cap — enforced both during block validation and txpool admission.
+
+**New file:** `OlympiaTargetingGasLimitCalculator.java`
+
+### EIP-7934: Block RLP Size Limit (8 MB)
+
+`MainnetBlockValidatorBuilder.olympia()` creates a `MainnetBlockValidator` with `OLYMPIA_MAX_RLP_BLOCK_SIZE = 8_388_608`. The existing `MainnetBlockValidator` checks `block.getSize() > maxRlpBlockSize` during validation.
+
+**Modified file:** `MainnetBlockValidatorBuilder.java`
+
+### EIP-7623: Floor Calldata Gas
+
+Already handled by `PragueGasCalculator` (inherited). No additional work needed.
+
+### EIP-7935: Default Gas Limit (60M) — Miner Policy Only
+
+NOT a consensus rule. The 60M gas limit is a recommended default for miners/validators. Configure via `--target-gas-limit=60000000` CLI flag. The `OlympiaTargetingGasLimitCalculator` handles elastic adjustment toward the target via inherited EIP-1559 logic.
+
+---
+
+## Files
 
 | Action | File | Purpose |
 |--------|------|---------|
@@ -471,7 +504,9 @@ This will be removed from the ECIP-1121 draft before finalization. It is NOT a m
 | MOD | `ClassicProtocolSpecsTest.java` | +5 Olympia tests |
 | MOD | `GenesisConfigClassicTest.java` | +3 Olympia tests |
 
-### Olympia Test Coverage
+---
+
+## Test Coverage
 
 | File | Tests | Coverage |
 |------|-------|---------|
@@ -483,7 +518,9 @@ This will be removed from the ECIP-1121 draft before finalization. It is NOT a m
 | `GenesisConfigClassicTest.java` | +3 | Olympia block numbers, asMap keys, stub config |
 | **Total** | **61** | |
 
-### Running Olympia Tests
+---
+
+## Running Tests
 
 ```bash
 # All Olympia tests (61 tests)
@@ -502,7 +539,9 @@ This will be removed from the ECIP-1121 draft before finalization. It is NOT a m
 ./gradlew :config:test           # ~11 sec
 ```
 
-### Recommended Mining Configuration
+---
+
+## Recommended Mining Configuration
 
 For Olympia-era miners, set the target gas limit to 60M (EIP-7935 recommended default):
 
@@ -514,37 +553,11 @@ build/install/besu/bin/besu --network=CLASSIC \
   --rpc-http-enabled --rpc-http-port=8548
 ```
 
-### Deferred EIPs (Commits 5-6) — ALL COMPLETE
+---
 
-#### EIP-2935: Block Hashes in State
-
-System contract at `0x0000f90827f1c53a10cb7a02335b175320002935` stores parent block hashes in 8191-slot rotating storage. `OlympiaPreExecutionProcessor` extends `FrontierPreExecutionProcessor` (NOT Cancun/Prague — avoids beacon roots, ETC is PoW). Deploys contract at fork activation if missing (handles both fresh sync via genesis alloc and live network fork). `BLOCKHASH` opcode reads from contract storage via `Eip7709BlockHashLookup`.
-
-**New file:** `blockhash/OlympiaPreExecutionProcessor.java`
-
-#### EIP-7825: Transaction Gas Cap (30M)
-
-`OlympiaTargetingGasLimitCalculator` extends `LondonTargetingGasLimitCalculator` with `transactionGasLimitCap() = 30_000_000L`. Besu's `MainnetTransactionValidator` already checks this cap — enforced both during block validation and txpool admission.
-
-**New file:** `OlympiaTargetingGasLimitCalculator.java`
-
-#### EIP-7934: Block RLP Size Limit (8 MB)
-
-`MainnetBlockValidatorBuilder.olympia()` creates a `MainnetBlockValidator` with `OLYMPIA_MAX_RLP_BLOCK_SIZE = 8_388_608`. The existing `MainnetBlockValidator` checks `block.getSize() > maxRlpBlockSize` during validation.
-
-**Modified file:** `MainnetBlockValidatorBuilder.java`
-
-#### EIP-7623: Floor Calldata Gas
-
-Already handled by `PragueGasCalculator` (inherited). No additional work needed.
-
-#### EIP-7935: Default Gas Limit (60M) — Miner Policy Only
-
-NOT a consensus rule. The 60M gas limit is a recommended default for miners/validators. Configure via `--target-gas-limit=60000000` CLI flag. The `OlympiaTargetingGasLimitCalculator` handles elastic adjustment toward the target via inherited EIP-1559 logic.
-
-### Reference Implementations
+## Reference Implementations
 
 - core-geth: `/media/dev/2tb/dev/core-geth/` (branch `olympia`, 25 commits)
 - Fukuii: `/media/dev/2tb/dev/fukuii/fukuii-client/` (branch `olympia`)
 - ECIPs: `/media/dev/2tb/dev/ECIPs/_specs/`
-- Treasury contract: `/media/dev/2tb/dev/olympia-treasury-contract/` (deployed on Mordor)
+- Treasury contract: `/media/dev/2tb/dev/olympia-treasury-contract/` (deployed on Mordor at `0xCfE1e0ECbff745e6c800fF980178a8dDEf94bEe2`)
