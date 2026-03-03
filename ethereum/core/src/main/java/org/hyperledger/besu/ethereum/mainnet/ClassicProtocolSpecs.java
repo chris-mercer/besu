@@ -37,8 +37,10 @@ import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.TransactionType;
 import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.core.BlockHeader;
+import org.hyperledger.besu.ethereum.MainnetBlockValidatorBuilder;
 import org.hyperledger.besu.ethereum.core.MiningConfiguration;
 import org.hyperledger.besu.ethereum.core.feemarket.CoinbaseFeePriceCalculator;
+import org.hyperledger.besu.ethereum.mainnet.blockhash.OlympiaPreExecutionProcessor;
 import org.hyperledger.besu.ethereum.mainnet.feemarket.BaseFeeMarket;
 import org.hyperledger.besu.ethereum.mainnet.feemarket.FeeMarket;
 import org.hyperledger.besu.ethereum.mainnet.headervalidationrules.AncestryValidationRule;
@@ -464,10 +466,10 @@ public class ClassicProtocolSpecs {
                 (blobSchedule) ->
                     FeeMarket.london(
                         olympiaBlockNumber, genesisConfigOptions.getBaseFeePerGas())))
-        // ECIP-1111: EIP-1559 elastic block gas limit
+        // ECIP-1111: EIP-1559 elastic block gas limit + EIP-7825: 30M per-TX gas cap
         .gasLimitCalculatorBuilder(
             (feeMarket, gasCalculator, blobSchedule) ->
-                new LondonTargetingGasLimitCalculator(
+                new OlympiaTargetingGasLimitCalculator(
                     olympiaBlockNumber, (BaseFeeMarket) feeMarket))
         // ECIP-1121: BLS12-381 + MODEXP(1024) + P256 precompiles (no KZG)
         .precompileContractRegistryBuilder(MainnetPrecompiledContractRegistries::olympia)
@@ -539,6 +541,10 @@ public class ClassicProtocolSpecs {
             (feeMarket, gasCalculator, gasLimitCalculator) ->
                 createClassicBaseFeeMarketOmmerValidator((BaseFeeMarket) feeMarket))
         .blockBodyValidatorBuilder(BaseFeeBlockBodyValidator::new)
+        // EIP-2935: block hash history system contract + EIP-7709 block hash lookup
+        .preExecutionProcessor(new OlympiaPreExecutionProcessor())
+        // EIP-7934: 8 MB block RLP size limit
+        .blockValidatorBuilder(MainnetBlockValidatorBuilder::olympia)
         .hardforkId(OLYMPIA);
   }
 
