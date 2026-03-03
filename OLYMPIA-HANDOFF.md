@@ -1,12 +1,12 @@
-# Besu ETC Branch — Handoff Document
+# Besu Olympia Branch — Handoff Document
 
 ## Overview
 
-The `etc` branch restores Hyperledger Besu as a fully functional Ethereum Classic client through the Spiral hard fork. The `olympia` branch (from `etc`) adds the Olympia hard fork — ETC's biggest upgrade, bringing EIP-1559 with treasury credit + 13 Cancun/Prague EIPs.
+The `olympia` branch (from `etc`) implements the Olympia hard fork for Besu — ETC's biggest upgrade, bringing EIP-1559 with treasury credit + 13 Cancun/Prague EIPs + 4 deferred EIPs (block hashes in state, TX gas cap, block size limit, default gas limit).
 
-**Branch:** `etc` (from `main`) — ETC client through Spiral
 **Branch:** `olympia` (from `etc`) — Olympia hard fork (ECIP-1111 + ECIP-1121)
-**Status:** Phases 1-5 (etc) + Olympia Commits 1-3 COMPLETE
+**Parent:** `etc` (from `main`) — ETC client through Spiral (6 commits, separate handoff)
+**Status:** ALL 6 OLYMPIA COMMITS COMPLETE
 **Olympia activation:** Mordor block 15,800,850 / ETC mainnet block 24,751,337
 
 ### Background
@@ -263,6 +263,12 @@ Root `build.gradle` line 396: `useJUnitPlatform { excludeTags 'live' }` ensures 
 | `.../mainnet/live/MordorLiveTest.java` | 14 | Live (Mordor node) |
 | `.../mainnet/live/EtcMainnetLiveTest.java` | 12 | Live (public RPC) |
 
+### Test Files (Olympia — Deferred EIPs)
+
+| File | Tests | Type |
+|------|-------|------|
+| `.../mainnet/OlympiaDeferredEipsTest.java` | 12 | Unit |
+
 ---
 
 ## Testing Gotchas
@@ -347,9 +353,10 @@ build/install/besu/bin/besu --network=MORDOR \
 | 5 | `MordorLiveTest.java` | 14 | Live |
 | 5 | `EtcMainnetLiveTest.java` | 12 | Live |
 | Olympia | `OlympiaBlockProcessorTest.java` | 12 | Unit |
-| Olympia | `OlympiaProtocolSpecsTest.java` | 13 | Unit |
-| Olympia | `GenesisConfigOlympiaTest.java` | 10 | Unit |
-| | **Total** | **~184** | |
+| Olympia | `OlympiaProtocolSpecsTest.java` | 17 | Unit |
+| Olympia | `OlympiaDeferredEipsTest.java` | 12 | Unit |
+| Olympia | `GenesisConfigOlympiaTest.java` | 12 | Unit |
+| | **Total** | **~202** | |
 
 ---
 
@@ -406,6 +413,9 @@ The Mordor treasury address `0xCfE1e0ECbff745e6c800fF980178a8dDEf94bEe2` is a de
 | 1 | `ff12bb2403` | Config layer + OlympiaBlockProcessor + ClassicEVMs.olympia() |
 | 2 | `fb87092580` | Protocol spec, precompiles, factory, milestone wiring |
 | 3 | `93fefb21d0` | Comprehensive Olympia test suite (35 new tests) |
+| 4 | `34b19f8cc2` | Handoff documentation |
+| 5 | `4eb88a2058` | Deferred EIPs: EIP-2935, EIP-7825, EIP-7934 |
+| 6 | `ab21427cd5` | Deferred EIP tests + OLYMPIA-HANDOFF.md |
 
 ### Olympia EIP Summary
 
@@ -442,18 +452,22 @@ The Mordor treasury address `0xCfE1e0ECbff745e6c800fF980178a8dDEf94bEe2` is a de
 | Action | File | Purpose |
 |--------|------|---------|
 | NEW | `OlympiaBlockProcessor.java` | Treasury credit: baseFee × gasUsed → treasury |
+| NEW | `blockhash/OlympiaPreExecutionProcessor.java` | EIP-2935: block hash system contract + EIP-7709 lookup |
+| NEW | `OlympiaTargetingGasLimitCalculator.java` | EIP-7825: 30M per-TX gas cap |
 | NEW | `OlympiaBlockProcessorTest.java` | 12 treasury credit tests |
-| NEW | `OlympiaProtocolSpecsTest.java` | 13 fork definition tests |
-| NEW | `GenesisConfigOlympiaTest.java` | 10 genesis config tests |
+| NEW | `OlympiaProtocolSpecsTest.java` | 17 fork definition + deferred EIP tests |
+| NEW | `OlympiaDeferredEipsTest.java` | 12 deferred EIP tests (2935, 7825, 7934, 7935) |
+| NEW | `GenesisConfigOlympiaTest.java` | 12 genesis config tests (includes EIP-2935 alloc) |
 | MOD | `HardforkId.java` | Added OLYMPIA to ClassicHardforkId enum |
 | MOD | `GenesisConfigOptions.java` | getOlympiaBlockNumber, getOlympiaTreasuryAddress |
 | MOD | `JsonGenesisConfigOptions.java` | Implementations + asMap + forkBlockNumbers |
 | MOD | `StubGenesisConfigOptions.java` | Fields, getters, builders |
-| MOD | `mordor.json` | olympiaBlock: 15800850, treasury address |
-| MOD | `classic.json` | olympiaBlock: 24751337, treasury address |
+| MOD | `mordor.json` | olympiaBlock, treasury address, EIP-2935 contract in alloc |
+| MOD | `classic.json` | olympiaBlock, treasury address, EIP-2935 contract in alloc |
 | MOD | `all_forks.json` | olympiaBlock + treasury for round-trip test |
 | MOD | `ClassicEVMs.java` | olympia() + olympiaOperations() |
-| MOD | `ClassicProtocolSpecs.java` | olympiaDefinition() + custom header validators |
+| MOD | `ClassicProtocolSpecs.java` | olympiaDefinition() with deferred EIPs wired |
+| MOD | `MainnetBlockValidatorBuilder.java` | olympia() with 8MB RLP limit (EIP-7934) |
 | MOD | `MainnetPrecompiledContracts.java` | populateForOlympia() |
 | MOD | `MainnetPrecompiledContractRegistries.java` | olympia() factory |
 | MOD | `MainnetProtocolSpecFactory.java` | olympiaDefinition() factory |
@@ -466,18 +480,22 @@ The Mordor treasury address `0xCfE1e0ECbff745e6c800fF980178a8dDEf94bEe2` is a de
 | File | Tests | Coverage |
 |------|-------|---------|
 | `OlympiaBlockProcessorTest.java` | 12 | Treasury credit calculations, era reward coexistence, accumulation, edge cases |
-| `OlympiaProtocolSpecsTest.java` | 13 | Fork ID, PragueGasCalculator, EIP-1559, block processor type, no withdrawals |
-| `GenesisConfigOlympiaTest.java` | 10 | Mordor/classic parsing, treasury address, asMap, forkBlockNumbers, stub config |
+| `OlympiaProtocolSpecsTest.java` | 17 | Fork ID, gas calc, EIP-1559, block processor, no withdrawals, preExecutionProcessor, gasLimitCalculator |
+| `OlympiaDeferredEipsTest.java` | 12 | EIP-2935 (history contract, lookup), EIP-7825 (TX gas cap 30M), EIP-7934 (block size 8MB), EIP-7935 (miner policy) |
+| `GenesisConfigOlympiaTest.java` | 12 | Mordor/classic parsing, treasury address, asMap, forkBlockNumbers, stub config, EIP-2935 alloc |
 | `ClassicProtocolSpecsTest.java` | +5 | Olympia fork ID, gas calc, processor, EIP-1559, no withdrawals |
 | `GenesisConfigClassicTest.java` | +3 | Olympia block numbers, asMap keys, stub config |
-| **Total** | **43** | |
+| **Total** | **61** | |
 
 ### Running Olympia Tests
 
 ```bash
-# All Olympia tests
+# All Olympia tests (61 tests)
 ./gradlew :ethereum:core:test --tests "*Olympia*"
 ./gradlew :config:test --tests "*GenesisConfigOlympia*"
+
+# Deferred EIPs tests only (12 tests)
+./gradlew :ethereum:core:test --tests "*OlympiaDeferredEips*"
 
 # All Classic + Olympia tests (regression)
 ./gradlew :ethereum:core:test --tests "*Classic*" --tests "*Olympia*" --tests "*ArtificialFinality*" --tests "*EtcHash*"
@@ -488,10 +506,45 @@ The Mordor treasury address `0xCfE1e0ECbff745e6c800fF980178a8dDEf94bEe2` is a de
 ./gradlew :config:test           # ~11 sec
 ```
 
-### Deferred Items
+### Recommended Mining Configuration
 
-- **EIP-2935 (block hashes in state):** Requires system contract deployment at fork activation block. Needs investigation on whether Besu auto-deploys at fork time or if it must be in genesis alloc.
-- **EIP-7825/7623/7935/7934 (gas limits, block size):** PragueGasCalculator handles EIP-7623 calldata floor. Remaining EIPs need separate handling in gas limit calculator, transaction validation, or P2P layer.
+For Olympia-era miners, set the target gas limit to 60M (EIP-7935 recommended default):
+
+```bash
+build/install/besu/bin/besu --network=CLASSIC \
+  --data-path=/media/dev/2tb/data/blockchain/besu/classic \
+  --target-gas-limit=60000000 \
+  --miner-enabled --miner-coinbase=<address> \
+  --rpc-http-enabled --rpc-http-port=8548
+```
+
+### Deferred EIPs (Commits 5-6) — ALL COMPLETE
+
+#### EIP-2935: Block Hashes in State
+
+System contract at `0x0000f90827f1c53a10cb7a02335b175320002935` stores parent block hashes in 8191-slot rotating storage. `OlympiaPreExecutionProcessor` extends `FrontierPreExecutionProcessor` (NOT Cancun/Prague — avoids beacon roots, ETC is PoW). Deploys contract at fork activation if missing (handles both fresh sync via genesis alloc and live network fork). `BLOCKHASH` opcode reads from contract storage via `Eip7709BlockHashLookup`.
+
+**New file:** `blockhash/OlympiaPreExecutionProcessor.java`
+
+#### EIP-7825: Transaction Gas Cap (30M)
+
+`OlympiaTargetingGasLimitCalculator` extends `LondonTargetingGasLimitCalculator` with `transactionGasLimitCap() = 30_000_000L`. Besu's `MainnetTransactionValidator` already checks this cap — enforced both during block validation and txpool admission.
+
+**New file:** `OlympiaTargetingGasLimitCalculator.java`
+
+#### EIP-7934: Block RLP Size Limit (8 MB)
+
+`MainnetBlockValidatorBuilder.olympia()` creates a `MainnetBlockValidator` with `OLYMPIA_MAX_RLP_BLOCK_SIZE = 8_388_608`. The existing `MainnetBlockValidator` checks `block.getSize() > maxRlpBlockSize` during validation.
+
+**Modified file:** `MainnetBlockValidatorBuilder.java`
+
+#### EIP-7623: Floor Calldata Gas
+
+Already handled by `PragueGasCalculator` (inherited). No additional work needed.
+
+#### EIP-7935: Default Gas Limit (60M) — Miner Policy Only
+
+NOT a consensus rule. The 60M gas limit is a recommended default for miners/validators. Configure via `--target-gas-limit=60000000` CLI flag. The `OlympiaTargetingGasLimitCalculator` handles elastic adjustment toward the target via inherited EIP-1559 logic.
 
 ### Reference Implementations
 

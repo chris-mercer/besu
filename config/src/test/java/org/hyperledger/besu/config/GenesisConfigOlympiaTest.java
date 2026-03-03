@@ -20,6 +20,7 @@ import org.hyperledger.besu.datatypes.Address;
 
 import java.util.OptionalLong;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -115,5 +116,42 @@ public class GenesisConfigOlympiaTest {
     StubGenesisConfigOptions stub = new StubGenesisConfigOptions();
     assertThat(stub.getOlympiaBlockNumber()).isEmpty();
     assertThat(stub.getOlympiaTreasuryAddress()).isEmpty();
+  }
+
+  // --- EIP-2935 contract in genesis alloc ---
+
+  private static final Address HISTORY_STORAGE_ADDRESS =
+      Address.fromHexString("0x0000f90827f1c53a10cb7a02335b175320002935");
+
+  @Test
+  public void mordorAllocContainsEip2935Contract() {
+    GenesisConfig genesis = GenesisConfig.fromResource("/mordor.json");
+    boolean found =
+        genesis.streamAllocations()
+            .anyMatch(
+                account ->
+                    account.address().equals(HISTORY_STORAGE_ADDRESS)
+                        && account.code() != null
+                        && !account.code().isEmpty()
+                        && account.nonce() == 1);
+    assertThat(found)
+        .as("Mordor genesis alloc must contain EIP-2935 history storage contract with nonce=1")
+        .isTrue();
+  }
+
+  @Test
+  public void classicAllocContainsEip2935Contract() {
+    GenesisConfig genesis = GenesisConfig.fromResource("/classic.json");
+    boolean found =
+        genesis.streamAllocations()
+            .anyMatch(
+                account ->
+                    account.address().equals(HISTORY_STORAGE_ADDRESS)
+                        && account.code() != null
+                        && !account.code().isEmpty()
+                        && account.nonce() == 1);
+    assertThat(found)
+        .as("Classic genesis alloc must contain EIP-2935 history storage contract with nonce=1")
+        .isTrue();
   }
 }
