@@ -56,9 +56,9 @@ public class OlympiaGasLimitSecurityTest {
   }
 
   @Test
-  public void olympiaTransactionGasCapIs30M() {
+  public void olympiaTransactionGasCapIs2Pow24() {
     assertThat(OlympiaTargetingGasLimitCalculator.OLYMPIA_TRANSACTION_GAS_LIMIT_CAP)
-        .isEqualTo(30_000_000L);
+        .isEqualTo(16_777_216L);
   }
 
   @Test
