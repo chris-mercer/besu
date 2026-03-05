@@ -134,6 +134,7 @@ public class JsonRpcMethodsFactory {
                   miningConfiguration,
                   supportedCapabilities,
                   apiConfiguration,
+                  genesisConfigOptions,
                   transactionSimulator,
                   protocolContext.getPluginServiceManager(),
                   metricsSystem),
