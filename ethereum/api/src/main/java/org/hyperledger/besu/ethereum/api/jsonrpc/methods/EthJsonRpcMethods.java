@@ -14,6 +14,7 @@
  */
 package org.hyperledger.besu.ethereum.api.jsonrpc.methods;
 
+import org.hyperledger.besu.config.GenesisConfigOptions;
 import org.hyperledger.besu.ethereum.api.ApiConfiguration;
 import org.hyperledger.besu.ethereum.api.jsonrpc.RpcApis;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.filter.FilterManager;
@@ -89,6 +90,7 @@ public class EthJsonRpcMethods extends ApiGroupJsonRpcMethods {
 
   private final Set<Capability> supportedCapabilities;
   private final ApiConfiguration apiConfiguration;
+  private final GenesisConfigOptions genesisConfigOptions;
   private final TransactionSimulator transactionSimulator;
   private final MetricsSystem metricsSystem;
 
@@ -102,6 +104,7 @@ public class EthJsonRpcMethods extends ApiGroupJsonRpcMethods {
       final MiningConfiguration miningConfiguration,
       final Set<Capability> supportedCapabilities,
       final ApiConfiguration apiConfiguration,
+      final GenesisConfigOptions genesisConfigOptions,
       final TransactionSimulator transactionSimulator,
       final MetricsSystem metricsSystem) {
     this.blockchainQueries = blockchainQueries;
@@ -113,6 +116,7 @@ public class EthJsonRpcMethods extends ApiGroupJsonRpcMethods {
     this.miningConfiguration = miningConfiguration;
     this.supportedCapabilities = supportedCapabilities;
     this.apiConfiguration = apiConfiguration;
+    this.genesisConfigOptions = genesisConfigOptions;
     this.transactionSimulator = transactionSimulator;
     this.metricsSystem = metricsSystem;
   }
@@ -162,7 +166,7 @@ public class EthJsonRpcMethods extends ApiGroupJsonRpcMethods {
             new EthEstimateGas(blockchainQueries, transactionSimulator, apiConfiguration),
             new EthCreateAccessList(blockchainQueries, transactionSimulator),
             new EthMining(miningCoordinator),
-            new EthConfig(blockchainQueries, protocolSchedule),
+            new EthConfig(blockchainQueries, protocolSchedule, genesisConfigOptions),
             new EthProtocolVersion(supportedCapabilities),
             new EthGasPrice(blockchainQueries, apiConfiguration),
             new EthChainId(protocolSchedule.getChainId()),
