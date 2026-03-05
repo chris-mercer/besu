@@ -34,7 +34,7 @@ The `olympia` branch implements the Olympia hard fork for Besu — ETC's biggest
 **ECIP-1121 (13 EIPs):**
 - EIP-5656: MCOPY | EIP-1153: TLOAD/TSTORE | EIP-6780: SELFDESTRUCT nerf
 - EIP-2537: BLS12-381 precompiles | EIP-7951: P-256 precompile
-- EIP-7823/7883: MODEXP bounds + gas | EIP-7825: TX gas cap 30M
+- EIP-7823/7883: MODEXP bounds + gas | EIP-7825: TX gas cap 2^24
 - EIP-7623: Floor calldata gas | EIP-7935: Default gas limit 60M
 - EIP-2935: Block hashes in state | EIP-7702: EOA code delegation
 - EIP-7934: Block size limit
@@ -47,7 +47,7 @@ The `olympia` branch implements the Olympia hard fork for Besu — ETC's biggest
 
 **Treasury credit is ADDITIVE:** `OlympiaBlockProcessor` extends `ClassicBlockProcessor` and overrides `rewardCoinbase()`. After computing standard ECIP-1017 era rewards, it credits `baseFee × gasUsed` to the treasury address. EIP-1559 transaction processing is not modified — Besu's standard EIP-1559 flow implicitly burns basefee (sender pays, miner gets tips only), and the treasury credit is added separately in block finalization.
 
-**Gas calculator:** `PragueGasCalculator` — handles all gas cost changes (BLS12-381, P-256, MODEXP, calldata floor). Blob-specific methods exist but are never invoked without blob transactions.
+**Gas calculator:** `OsakaGasCalculator` — handles all gas cost changes (BLS12-381, P-256, EIP-7883 MODEXP repricing, calldata floor). Extends `PragueGasCalculator` with overridden `modExpGasCost()` (min 500, no /3 divisor) and `isPrecompile()` (P256VERIFY at 0x0100). Blob-specific methods exist but are never invoked without blob transactions.
 
 **EVM:** `ClassicEVMs.olympia()` — Istanbul ops + PUSH0 + BASEFEE + TLOAD/TSTORE + MCOPY + SelfDestruct(eip6780=true). No BLOBHASH, BLOBBASEFEE, PREVRANDAO.
 
@@ -67,9 +67,9 @@ System contract at `0x0000f90827f1c53a10cb7a02335b175320002935` stores parent bl
 
 **New file:** `blockhash/OlympiaPreExecutionProcessor.java`
 
-### EIP-7825: Transaction Gas Cap (30M)
+### EIP-7825: Transaction Gas Cap (2^24 = 16,777,216)
 
-`OlympiaTargetingGasLimitCalculator` extends `LondonTargetingGasLimitCalculator` with `transactionGasLimitCap() = 30_000_000L`. Besu's `MainnetTransactionValidator` already checks this cap — enforced both during block validation and txpool admission.
+`OlympiaTargetingGasLimitCalculator` extends `LondonTargetingGasLimitCalculator` with `transactionGasLimitCap() = 16_777_216L` (2^24 per final EIP-7825 spec). Besu's `MainnetTransactionValidator` already checks this cap — enforced both during block validation and txpool admission.
 
 **New file:** `OlympiaTargetingGasLimitCalculator.java`
 
@@ -95,7 +95,7 @@ NOT a consensus rule. The 60M gas limit is a recommended default for miners/vali
 |--------|------|---------|
 | NEW | `OlympiaBlockProcessor.java` | Treasury credit: baseFee × gasUsed → treasury |
 | NEW | `blockhash/OlympiaPreExecutionProcessor.java` | EIP-2935: block hash system contract + EIP-7709 lookup |
-| NEW | `OlympiaTargetingGasLimitCalculator.java` | EIP-7825: 30M per-TX gas cap |
+| NEW | `OlympiaTargetingGasLimitCalculator.java` | EIP-7825: 2^24 per-TX gas cap |
 | NEW | `OlympiaBlockProcessorTest.java` | 12 treasury credit tests |
 | NEW | `OlympiaProtocolSpecsTest.java` | 17 fork definition + deferred EIP tests |
 | NEW | `OlympiaDeferredEipsTest.java` | 12 deferred EIP tests (2935, 7825, 7934, 7935) |
@@ -125,7 +125,7 @@ NOT a consensus rule. The 60M gas limit is a recommended default for miners/vali
 |------|-------|---------|
 | `OlympiaBlockProcessorTest.java` | 12 | Treasury credit calculations, era reward coexistence, accumulation, edge cases |
 | `OlympiaProtocolSpecsTest.java` | 17 | Fork ID, gas calc, EIP-1559, block processor, no withdrawals, preExecutionProcessor, gasLimitCalculator |
-| `OlympiaDeferredEipsTest.java` | 12 | EIP-2935 (history contract, lookup), EIP-7825 (TX gas cap 30M), EIP-7934 (block size 8MB), EIP-7935 (miner policy) |
+| `OlympiaDeferredEipsTest.java` | 12 | EIP-2935 (history contract, lookup), EIP-7825 (TX gas cap 2^24), EIP-7934 (block size 8MB), EIP-7935 (miner policy) |
 | `GenesisConfigOlympiaTest.java` | 12 | Mordor/classic parsing, treasury address, asMap, forkBlockNumbers, stub config, EIP-2935 alloc |
 | `ClassicProtocolSpecsTest.java` | +5 | Olympia fork ID, gas calc, processor, EIP-1559, no withdrawals |
 | `GenesisConfigClassicTest.java` | +3 | Olympia block numbers, asMap keys, stub config |
