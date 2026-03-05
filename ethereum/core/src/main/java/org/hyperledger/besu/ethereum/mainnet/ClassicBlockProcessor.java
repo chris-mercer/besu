@@ -89,7 +89,7 @@ public class ClassicBlockProcessor extends AbstractBlockProcessor {
     return true;
   }
 
-  // getUncleInclusionReword return reward for including
+  // getUncleInclusionReward returns the reward for including
   //  an uncle block
   private Wei calculateOmmerReward(final int era, final long distance) {
     Wei winnerReward = getBlockWinnerRewardByEra(era);
@@ -103,7 +103,7 @@ public class ClassicBlockProcessor extends AbstractBlockProcessor {
   // era=5,000,000 blocks)
   // Returns a zero-index era number, so "Era 1": 0, "Era 2": 1, "Era 3": 2 ...
   private int getBlockEra(final long blockNumber, final long eraLength) {
-    // if genesis block or impossible nagative-numbered block, return zero
+    // if genesis block or impossible negative-numbered block, return zero
     if (blockNumber < 0) return 0;
     long remainder = (blockNumber - 1) % eraLength;
     long base = blockNumber - remainder;
