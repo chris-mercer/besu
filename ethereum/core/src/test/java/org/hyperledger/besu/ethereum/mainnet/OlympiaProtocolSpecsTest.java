@@ -25,7 +25,7 @@ import org.hyperledger.besu.ethereum.core.BlockHeaderTestFixture;
 import org.hyperledger.besu.ethereum.core.MiningConfiguration;
 import org.hyperledger.besu.ethereum.mainnet.blockhash.FrontierPreExecutionProcessor;
 import org.hyperledger.besu.ethereum.mainnet.blockhash.OlympiaPreExecutionProcessor;
-import org.hyperledger.besu.evm.gascalculator.PragueGasCalculator;
+import org.hyperledger.besu.evm.gascalculator.OsakaGasCalculator;
 import org.hyperledger.besu.evm.gascalculator.ShanghaiGasCalculator;
 import org.hyperledger.besu.evm.internal.EvmConfiguration;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -113,9 +113,9 @@ public class OlympiaProtocolSpecsTest {
   // --- Gas calculator ---
 
   @Test
-  public void olympiaUsesPragueGasCalculator() {
+  public void olympiaUsesOsakaGasCalculator() {
     assertThat(specAt(OLYMPIA_BLOCK).getGasCalculator())
-        .isInstanceOf(PragueGasCalculator.class);
+        .isInstanceOf(OsakaGasCalculator.class);
   }
 
   @Test

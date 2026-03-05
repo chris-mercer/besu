@@ -34,7 +34,7 @@ import org.hyperledger.besu.evm.gascalculator.BerlinGasCalculator;
 import org.hyperledger.besu.evm.gascalculator.DieHardGasCalculator;
 import org.hyperledger.besu.evm.gascalculator.IstanbulGasCalculator;
 import org.hyperledger.besu.evm.gascalculator.LondonGasCalculator;
-import org.hyperledger.besu.evm.gascalculator.PragueGasCalculator;
+import org.hyperledger.besu.evm.gascalculator.OsakaGasCalculator;
 import org.hyperledger.besu.evm.gascalculator.ShanghaiGasCalculator;
 import org.hyperledger.besu.evm.gascalculator.SpuriousDragonGasCalculator;
 import org.hyperledger.besu.evm.internal.EvmConfiguration;
@@ -247,8 +247,8 @@ public class ClassicProtocolSpecsTest {
   }
 
   @Test
-  public void olympiaUsesPragueGasCalculator() {
-    assertThat(specAt(24_751_337L).getGasCalculator()).isInstanceOf(PragueGasCalculator.class);
+  public void olympiaUsesOsakaGasCalculator() {
+    assertThat(specAt(24_751_337L).getGasCalculator()).isInstanceOf(OsakaGasCalculator.class);
   }
 
   @Test
