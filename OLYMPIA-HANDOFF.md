@@ -168,6 +168,36 @@ build/install/besu/bin/besu --network=CLASSIC \
 
 ---
 
+## Cross-Client Verification Methodology
+
+Every EIP and ECIP in the Olympia fork is verified using a six-client cross-verification process:
+
+**Reference Clients (ETH production):**
+- [go-ethereum](https://github.com/ethereum/go-ethereum) — canonical Go implementation
+- [Erigon](https://github.com/erigontech/erigon) — optimized Go implementation
+- [Nethermind](https://github.com/NethermindEth/nethermind) — .NET implementation
+
+**ETC Clients (implementation targets):**
+- core-geth (`chris-mercer/core-geth`) — Go, forked from go-ethereum
+- Fukuii (`chris-mercer/fukuii`) — Scala/JVM, forked from Mantis
+- Besu (`chris-mercer/besu`) — Java/JVM, forked from Hyperledger Besu
+
+**Process (per EIP/ECIP):**
+1. Read the canonical EIP specification at `eips.ethereum.org`
+2. Verify implementation in all 3 ETH production clients (constants, formulas, gas costs, addresses)
+3. Verify implementation in all 3 ETC clients against both the spec and ETH implementations
+4. Cross-compare ETC clients against each other for consistency
+5. Document any discrepancies with severity (consensus-critical vs. cosmetic)
+
+**Catches from this process:**
+- **EIP-7825:** All 3 ETC clients had `MaxTxGas = 30,000,000`. ETH clients all use `1 << 24 = 16,777,216` per final spec. Corrected in all 3 ETC clients.
+- **EIP-7883:** Besu wired `PragueGasCalculator` (inherits old EIP-198 `BerlinGasCalculator.modExpGasCost()`) instead of `OsakaGasCalculator` which has the correct EIP-7883 formula. Fukuii had 3 formula bugs in the same EIP. Caught by comparing against go-ethereum's `osakaModexpGas()`.
+- **EIP-2537:** Core-geth and Fukuii both used the OLD 9-precompile draft (addresses 0x0a-0x12/0x13) instead of the final 7-precompile spec (0x0b-0x11). Besu was correct (inherits upstream Hyperledger Besu's Prague BLS implementation). Gas costs also diverged significantly in core-geth and Fukuii.
+
+This methodology ensures implementation parity across all ETC clients and consistency with ETH production client behavior for shared EIPs.
+
+---
+
 ## Reference Implementations
 
 - core-geth: `/media/dev/2tb/dev/core-geth/` (branch `olympia`, 25 commits)
