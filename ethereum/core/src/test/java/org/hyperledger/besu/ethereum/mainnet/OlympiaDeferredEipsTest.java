@@ -142,14 +142,14 @@ public class OlympiaDeferredEipsTest {
         .isInstanceOf(Eip7709BlockHashLookup.class);
   }
 
-  // ===== EIP-7825: Transaction gas cap (30M) =====
+  // ===== EIP-7825: Transaction gas cap (2^24 = 16,777,216) =====
 
   @Test
-  public void olympiaHasTransactionGasLimitCap30M() {
+  public void olympiaHasTransactionGasLimitCap() {
     ProtocolSpec olympia = specAt(OLYMPIA_BLOCK);
     assertThat(olympia.getGasLimitCalculator().transactionGasLimitCap())
-        .as("Olympia must enforce 30M per-transaction gas cap (EIP-7825)")
-        .isEqualTo(30_000_000L);
+        .as("Olympia must enforce 2^24 per-transaction gas cap (EIP-7825)")
+        .isEqualTo(16_777_216L);
   }
 
   @Test
@@ -170,8 +170,8 @@ public class OlympiaDeferredEipsTest {
   @Test
   public void olympiaGasLimitCapConstant() {
     assertThat(OlympiaTargetingGasLimitCalculator.OLYMPIA_TRANSACTION_GAS_LIMIT_CAP)
-        .as("EIP-7825 constant must be 30 million")
-        .isEqualTo(30_000_000L);
+        .as("EIP-7825 constant must be 2^24 (16,777,216)")
+        .isEqualTo(16_777_216L);
   }
 
   // ===== EIP-7934: Block RLP size limit (8 MB) =====
