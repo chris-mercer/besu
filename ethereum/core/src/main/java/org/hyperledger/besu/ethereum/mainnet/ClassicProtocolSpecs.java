@@ -61,6 +61,7 @@ import org.hyperledger.besu.evm.gascalculator.DieHardGasCalculator;
 import org.hyperledger.besu.evm.gascalculator.IstanbulGasCalculator;
 import org.hyperledger.besu.evm.gascalculator.LondonGasCalculator;
 import org.hyperledger.besu.evm.gascalculator.PetersburgGasCalculator;
+import org.hyperledger.besu.evm.gascalculator.OsakaGasCalculator;
 import org.hyperledger.besu.evm.gascalculator.PragueGasCalculator;
 import org.hyperledger.besu.evm.gascalculator.ShanghaiGasCalculator;
 import org.hyperledger.besu.evm.gascalculator.SpuriousDragonGasCalculator;
@@ -448,8 +449,8 @@ public class ClassicProtocolSpecs {
             isParallelTxProcessingEnabled,
             balConfiguration,
             metricsSystem)
-        // ECIP-1121: PragueGasCalculator for BLS12-381, P-256, MODEXP, calldata floor
-        .gasCalculator(PragueGasCalculator::new)
+        // ECIP-1121: OsakaGasCalculator for BLS12-381, P-256, EIP-7883 MODEXP, calldata floor
+        .gasCalculator(OsakaGasCalculator::new)
         // ECIP-1121: Prague-level EVM minus blob ops
         .evmBuilder(
             (gasCalculator, jdCacheConfig) ->
