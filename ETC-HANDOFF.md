@@ -350,21 +350,61 @@ build/install/besu/bin/besu --network=MORDOR \
 
 ---
 
-## Next Steps: Olympia Branch
+## Cross-Client Alignment
 
-Create `olympia` branch from `etc` for Phases 6-7:
+### ECIP-1100 MESS — Polynomial Formula (All 3 Clients)
 
-```bash
-git checkout -b olympia etc
+All three ETC clients implement the same ECIP-1100 cubic polynomial antigravity curve:
+
+```
+V(x) = DENOMINATOR + (3x² − 2x³/xcap) × HEIGHT / xcap²
 ```
 
-**Phase 6:** Olympia hard fork implementation (14 EIPs + ECIP-1111 treasury)
-**Phase 7:** Olympia test suite + Mordor live validation
+**Constants:** `DENOMINATOR = 128`, `xcap = 25132` (floor(8000π)), `HEIGHT = 3840`
+**Range:** 1× (128/128) at t=0 → 31× (3968/128) at t=xcap (~7 hours)
 
-See the Olympia phases in the original plan for full details on the 14 EIPs, OlympiaBlockProcessor (treasury redirect), and required test coverage.
+| Client | Implementation | Tests |
+|--------|---------------|-------|
+| core-geth | `consensus/ethash/artificial_finality.go` | 15 polynomial + 12 integration |
+| Besu | `mainnet/ArtificialFinality.java` | 15 polynomial + reorg rejection |
+| Fukuii | `consensus/mess/ArtificialFinality.scala` | 25 polynomial + rejection |
 
-**Reference implementations:**
-- core-geth: `/media/dev/2tb/dev/core-geth/` (branch `olympia`, 25 commits)
-- Fukuii: `/media/dev/2tb/dev/fukuii/fukuii-client/` (branch `olympia`)
-- ECIPs: `/media/dev/2tb/dev/ECIPs/_specs/`
-- Treasury contract: `/media/dev/2tb/dev/olympia-treasury-contract/` (deployed on Mordor at `0xCfE1e0ECbff745e6c800fF980178a8dDEf94bEe2`)
+**Note:** MESS is deactivated on both networks (Mordor at 10,400,000, mainnet at 19,250,000 / Spiral) but implementations are retained for historical sync validation.
+
+### EIP-7642 Exclusion (Intentional)
+
+EIP-7642 (`eth/69`) removes total difficulty (TD) from the `Status` handshake message. This is deliberately excluded from all three ETC clients because ETC is a Proof-of-Work chain that requires TD for chain selection. Removing TD would break peer discovery and fork choice.
+
+This will be removed from the ECIP-1121 draft before finalization. It is NOT a missing implementation.
+
+### Treasury Address
+
+The Mordor treasury address `0xCfE1e0ECbff745e6c800fF980178a8dDEf94bEe2` is a development placeholder in Chris Mercer's branches. Once merged into the official `ethereumclassic` organization, the address will be updated through proper coordination with the core development team.
+
+### Multi-Client Reference
+
+| Client | Pre-Olympia Branch | Olympia Branch | Repository |
+|--------|-------------------|----------------|------------|
+| core-geth | `etc` | `olympia` | chris-mercer/core-geth |
+| Besu | `etc` | `olympia` | chris-mercer/besu |
+| Fukuii | `alpha` | `olympia` | chris-mercer/fukuii |
+
+---
+
+## Next Steps: Olympia Branch
+
+The `olympia` branch extends `etc` with 14 EIPs + ECIP-1111 treasury for the Olympia hard fork.
+
+### Activation Timeline
+
+| Network | Block | Estimated Date |
+|---------|-------|---------------|
+| Mordor testnet | 15,800,850 | ~March 28, 2026 |
+| ETC mainnet | ~24,751,337 | ~mid-June 2026 |
+
+### Reference Implementations
+
+- core-geth: `chris-mercer/core-geth` branch `olympia`
+- Fukuii: `chris-mercer/fukuii` branch `olympia`
+- ECIPs: ECIP-1111 (treasury), ECIP-1112 (treasury contract), ECIP-1121 (EVM modernization)
+- Treasury contract: deployed on Mordor at `0xCfE1e0ECbff745e6c800fF980178a8dDEf94bEe2`
