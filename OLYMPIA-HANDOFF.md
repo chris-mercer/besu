@@ -39,7 +39,7 @@ The `olympia` branch implements the Olympia hard fork for Besu — ETC's biggest
 - EIP-2935: Block hashes in state | EIP-7702: EOA code delegation
 - EIP-7934: Block size limit
 
-**Treasury:** `0xCfE1e0ECbff745e6c800fF980178a8dDEf94bEe2`
+**Treasury:** `0xd6165F3aF4281037bce810621F62B43077Fb0e37`
 
 ---
 
@@ -203,4 +203,4 @@ This methodology ensures implementation parity across all ETC clients and consis
 - core-geth: `/media/dev/2tb/dev/core-geth/` (branch `olympia`, 25 commits)
 - Fukuii: `/media/dev/2tb/dev/fukuii/fukuii-client/` (branch `olympia`)
 - ECIPs: `/media/dev/2tb/dev/ECIPs/_specs/`
-- Treasury contract: `/media/dev/2tb/dev/olympia-treasury-contract/` (deployed on Mordor at `0xCfE1e0ECbff745e6c800fF980178a8dDEf94bEe2`)
+- Treasury contract: `/media/dev/2tb/dev/olympia-treasury-contract/` (deployed on Mordor at `0xd6165F3aF4281037bce810621F62B43077Fb0e37`)
