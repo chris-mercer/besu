@@ -10,6 +10,7 @@
     "istanbulBlock": 999983,
     "berlinBlock": 3985893,
     "londonBlock": 5520000,
+    "shanghaiTime": 1699478505,
     "ethash": {},
     "discovery": {
       "dns": "enrtree://AJE62Q4DUX4QMMXEHCSSCSC65TDHZYSMONSD64P3WULVLSF6MRQ3K@all.mordor.blockd.info",

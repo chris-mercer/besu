@@ -10,7 +10,7 @@
     "istanbulBlock": 10500839,
     "berlinBlock": 13189133,
     "londonBlock": 14525000,
-    "shanghaiTime": 0,
+    "shanghaiTime": 1707128710,
     "ethash": {},
     "discovery": {
       "dns": "enrtree://AJE62Q4DUX4QMMXEHCSSCSC65TDHZYSMONSD64P3WULVLSF6MRQ3K@all.classic.blockd.info",
