@@ -19,5 +19,6 @@ exec "$SCRIPT_DIR/build/install/besu/bin/besu" \
   --p2p-port=30304 \
   --data-storage-format=BONSAI \
   --sync-mode=FULL \
+  --snapsync-server-enabled \
   --logging=INFO \
   "$@"
