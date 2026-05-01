@@ -12,6 +12,9 @@
 .claude/reports/
 .claude/debug.log
 
+# Local dev workspace (scripts, planning files, notes)
+local/
+
 # Secrets & credentials
 .env
 .env.*
