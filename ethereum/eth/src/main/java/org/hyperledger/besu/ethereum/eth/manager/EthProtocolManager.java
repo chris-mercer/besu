@@ -461,6 +461,32 @@ public class EthProtocolManager implements ProtocolManager, MinedBlockObserver {
             .addArgument(message::getConnection)
             .log();
         peer.registerStatusReceived(status, peer.getConnection());
+        // ETH69 STATUS omits totalDifficulty. For PoW chains (mergePeerFilter absent = ETC),
+        // Besu stores Difficulty.ZERO by default. Override with a scaled estimate so peer
+        // scoring stays accurate — mirrors Fukuii's EthNodeStatus69ExchangeState logic.
+        if (mergePeerFilter.isEmpty() && status.isEth69Compatible()) {
+          final Difficulty ourTD = blockchain.getChainHead().getTotalDifficulty();
+          final long ourBestNum = blockchain.getChainHeadBlockNumber();
+          final long peerLatestBlock = status.blockRange().orElseThrow().latestBlock();
+          if (ourBestNum > 0 && !ourTD.equals(Difficulty.ZERO)) {
+            final Difficulty estimatedTD =
+                Difficulty.of(
+                    ourTD
+                        .getAsBigInteger()
+                        .multiply(BigInteger.valueOf(peerLatestBlock))
+                        .divide(BigInteger.valueOf(ourBestNum)));
+            peer.chainState().statusReceived(status.bestHash(), estimatedTD);
+            LOG.atDebug()
+                .setMessage(
+                    "ETH69 PoW peer TD estimated as {} for {} (ourTD={}, ourBlock={}, peerBlock={})")
+                .addArgument(estimatedTD)
+                .addArgument(peer::getLoggableId)
+                .addArgument(ourTD)
+                .addArgument(ourBestNum)
+                .addArgument(peerLatestBlock)
+                .log();
+          }
+        }
       }
     } catch (final RLPException e) {
       LOG.atDebug()
