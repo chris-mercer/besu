@@ -205,10 +205,9 @@ public class PoWTdBackfillStep {
       if (batchCount % BATCH_SIZE == 0) {
         updater.commit();
         updater = blockchain.getBlockchainStorage().updater();
-        if (LOG.isDebugEnabled()) {
-          final long written = n - anchorBlockNumber;
-          LOG.debug("PoW TD backfill progress: {} / {} blocks", written, totalBlocks);
-        }
+        final long written = n - anchorBlockNumber;
+        final long pct = written * 100 / totalBlocks;
+        LOG.info("PoW TD backfill progress: {}/{} blocks ({}%)", written, totalBlocks, pct);
       }
     }
     updater.commit();
